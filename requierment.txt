@@ -1,0 +1,9 @@
+network
+streamlit
+pandas
+matplotlib
+seaborn
+numpy
+geopandas
+streamlit-folium
+folium
