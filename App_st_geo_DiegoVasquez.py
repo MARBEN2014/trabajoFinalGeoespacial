@@ -23,7 +23,7 @@ def load_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.replace(',', '.').astype(float)
     
-    # Convertir fecha a datetime
+    # Convertir fecha a datetime con formato día-mes-año
     df['fecha_compra'] = pd.to_datetime(df['fecha_compra'], dayfirst=True)
     
     # Eliminar nulos en coordenadas críticas
@@ -48,38 +48,46 @@ except Exception as e:
     st.stop()
 
 # --- SIDEBAR (Filtros Avanzados) ---
-st.sidebar.header("🎯 Filtros de Inteligencia")
+st.sidebar.header(" Filtros")
 
 # Botón para limpiar filtros
 if st.sidebar.button("🔄 Resetear Filtros"):
     st.rerun()
 
-# Filtro 1: Canal de Venta
+# --- DETERMINACIÓN DE FECHAS EXACTAS DEL DATASET ---
+# Según el archivo cargado: Min: 2025-01-02, Max: 2025-04-28
+fecha_min_data = df['fecha_compra'].min().date()
+fecha_max_data = df['fecha_compra'].max().date()
+
+# Filtro 1: Rango de Fechas dinámico basado en el Dataset
+st.sidebar.subheader("Periodo de Análisis")
+fecha_rango = st.sidebar.date_input(
+    "Seleccione el periodo:",
+    value=(fecha_min_data, fecha_max_data),
+    min_value=fecha_min_data,
+    max_value=fecha_max_data
+)
+
+# Filtro 2: Canal de Venta
 canal_selected = st.sidebar.multiselect(
     "Canal de Venta:",
     options=sorted(df['canal'].unique()),
     default=df['canal'].unique()
 )
 
-# Filtro 2: Centro de Distribución
+# Filtro 3: Centro de Distribución
 cd_selected = st.sidebar.multiselect(
     "Centro de Distribución (CD):",
     options=sorted(df['centro_dist'].unique()),
     default=df['centro_dist'].unique()
 )
 
-# Filtro 3: Comunas
+# Filtro 4: Comunas
 comuna_selected = st.sidebar.multiselect(
     "Comunas de Entrega:",
     options=sorted(df['comuna'].unique()),
     default=df['comuna'].unique()
 )
-
-# Filtro 4: Rango de Fechas
-st.sidebar.subheader("Rango Temporal")
-min_date = df['fecha_compra'].min().date()
-max_date = df['fecha_compra'].max().date()
-fecha_rango = st.sidebar.date_input("Seleccione Periodo:", [min_date, max_date])
 
 # Filtro 5: Rango de Ventas
 min_v = int(df['venta_neta'].min())
@@ -95,15 +103,14 @@ mask = (
     (df['venta_neta'] <= rango_venta[1])
 )
 
-# Aplicar filtro de fecha solo si se seleccionó un rango válido
-if len(fecha_rango) == 2:
+# Aplicar filtro de fecha solo si se seleccionó un rango válido (inicio y fin)
+if isinstance(fecha_rango, tuple) and len(fecha_rango) == 2:
     mask = mask & (df['fecha_compra'].dt.date >= fecha_rango[0]) & (df['fecha_compra'].dt.date <= fecha_rango[1])
 
 df_filtered = df[mask]
 
 # --- CUERPO PRINCIPAL ---
-st.title(" Dashboard  ")
-st.title(" VisualizaciónDatos Geoespaciales ")
+st.title(" Dashboard de Visualización de Datos GeoEspaciales")
 st.markdown(f"**Alumno:** Diego Vásquez Orellana")
 
 # KPIs dinámicos
@@ -116,12 +123,13 @@ if not df_filtered.empty:
     with k3:
         st.metric("Ticket Promedio", f"$ {df_filtered['venta_neta'].mean():,.0f}")
 else:
-    st.warning("⚠️ No hay datos para los filtros seleccionados.")
+    st.warning(" No hay datos para los filtros seleccionados.")
 
 # Pestañas
 tab1, tab2 = st.tabs([" Visualización Geoespacial", " Análisis Estadístico"])
 
 with tab1:
+    st.subheader("Explorador Geográfico")
     tipo_mapa = st.selectbox(
         "Seleccione Capa de Análisis:",
         ["Red Logística (CDs y Entregas)", 
@@ -157,7 +165,7 @@ with tab1:
             HeatMap(df_filtered[['lat', 'lng']].values.tolist(), radius=12, blur=8).add_to(m)
 
         elif tipo_mapa == "Calor: Intensidad Económica (Ventas)":
-            max_val = df_filtered['venta_neta'].max()
+            max_val = df_filtered['venta_neta'].max() if df_filtered['venta_neta'].max() > 0 else 1
             df_filtered['venta_norm'] = df_filtered['venta_neta'] / max_val
             HeatMap(df_filtered[['lat', 'lng', 'venta_norm']].values.tolist(), radius=15, blur=10).add_to(m)
 
@@ -166,7 +174,8 @@ with tab1:
             choropleth = folium.Choropleth(
                 geo_data=geo_data, data=ventas_comuna,
                 columns=["comuna", "venta_neta"], key_on="feature.properties.name",
-                fill_color="YlGnBu", fill_opacity=0.7, line_opacity=0.2
+                fill_color="YlGnBu", fill_opacity=0.7, line_opacity=0.2,
+                highlight=True
             ).add_to(m)
             
             v_dict = ventas_comuna.set_index('comuna')['venta_neta'].to_dict()
@@ -196,25 +205,25 @@ with tab2:
             st.write("#### Ventas por Centro de Distribución")
             cd_sales = df_filtered.groupby('centro_dist')['venta_neta'].sum().sort_values(ascending=False)
             fig2, ax2 = plt.subplots()
-            sns.barplot(x=cd_sales.values, y=cd_sales.index, palette='viridis', ax=ax2)
+            sns.barplot(x=cd_sales.values, y=cd_sales.index, palette='viridis', hue=cd_sales.index, legend=False, ax=ax2)
             ax2.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{x/1e6:.1f}M'))
             st.pyplot(fig2)
 
-        st.write("#### Evolución de Unidades Vendidas")
+        st.write("#### Evolución Temporal de Unidades")
         temporal = df_filtered.groupby('fecha_compra')['unidades'].sum().reset_index()
         fig3, ax3 = plt.subplots(figsize=(12, 4))
         sns.lineplot(data=temporal, x='fecha_compra', y='unidades', marker='o', color='#21918c', ax=ax3)
         plt.xticks(rotation=45)
         st.pyplot(fig3)
     else:
-        st.info("Ajuste los filtros para visualizar los gráficos.")
+        st.info("Utilice los filtros laterales para visualizar el análisis estadístico.")
 
 # --- REFLEXIÓN ---
 st.divider()
-with st.expander("Ver Reflexión Académica"):
+with st.expander(" Reflexión sobre la visualización"):
     st.markdown("""
-    **Mejoras en la Exploración Mediante Filtros Avanzados:**
-    1. **Filtro de Fecha:** Esencial para detectar estacionalidad (ej. días de mayor demanda en la RM).
-    2. **Filtros de Ubicación (Comuna/CD):** Permite analizar la eficiencia logística por zona. Un CD podría estar saturado mientras otro tiene baja demanda.
-    3. **Interactividad Cruzada:** Al filtrar por CD, el mapa de calor muestra exactamente el área de influencia de esa bodega, permitiendo detectar 'solapamientos' o zonas descuidadas.
+    **Análisis de Impacto de Filtros Avanzados:**
+    1. **Filtro Temporal:** Permite identificar picos de demanda entre enero y abril de 2025, optimizando la planificación de inventario.
+    2. **Filtros Geo-Logísticos:** Al combinar el filtro de Comuna y CD, la empresa puede detectar si un Centro de Distribución específico está subutilizado o si la demanda de una comuna está siendo atendida por un CD ineficiente (lejano).
+    3. **Rendimiento:** El uso de `st.cache_data` y el muestreo de 1000 puntos asegura que el dashboard sea rápido incluso con miles de registros.
     """)
