@@ -8,6 +8,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+def format_chile(valor):
+    """Convierte un número a string con punto como separador de miles"""
+    return f"{valor:,.0f}".replace(',', '.')
+
 # Configuración de página
 st.set_page_config(page_title="Dashboard Ventas RM - Diego Vásquez", layout="wide")
 
@@ -119,15 +123,43 @@ df_filtered = df[mask]
 st.title(" Dashboard de Visualización de Datos GeoEspaciales")
 st.markdown(f"**Alumno:** Diego Vásquez Orellana")
 
-# indicadores principales 
+ 
 if not df_filtered.empty:
+    # 1. Cálculos de porcentajes
+    total_p = len(df_filtered)
+    pedidos_app = len(df_filtered[df_filtered['canal'].str.upper() == 'APP'])
+    pedidos_sitio = len(df_filtered[df_filtered['canal'].str.upper() == 'SITIO'])
+    
+    pct_app = (pedidos_app / total_p) * 100 if total_p > 0 else 0
+    pct_sitio = (pedidos_sitio / total_p) * 100 if total_p > 0 else 0
+
+    
     k1, k2, k3 = st.columns(3)
+    
     with k1:
-        st.metric("Venta Total Filtrada", f"$ {df_filtered['venta_neta'].sum():,.0f}")
+         
+        st.metric("Venta Total Filtrada", f"$ {format_chile(df_filtered['venta_neta'].sum())}")
+        
     with k2:
-        st.metric("Total Pedidos", f"{len(df_filtered):,}")
+        
+        st.metric("Total Pedidos", format_chile(total_p))
+        
+        
+        st.markdown(f"""
+            <div style="display: inline-block; padding: 5px 12px; margin-top: -10px; 
+                        background-color: #f0f2f6; border-radius: 8px; border: 1px solid #d1d5db;">
+                <span style="color: #0000FF; font-size: 18px; font-weight: 900;">📱 App: {pct_app:.1f}%</span>
+                <span style="color: #333; font-size: 18px; font-weight: bold; margin: 0 8px;">|</span>
+                <span style="color: #006400; font-size: 18px; font-weight: 900;">💻 Sitio: {pct_sitio:.1f}%</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
     with k3:
-        st.metric("Ticket Promedio", f"$ {df_filtered['venta_neta'].mean():,.0f}")
+        
+        st.metric("Ticket Promedio", f"$ {format_chile(df_filtered['venta_neta'].mean())}")
+        
+     
+
 else:
     st.warning(" No hay datos para los filtros seleccionados.")
 
@@ -178,7 +210,7 @@ with tab1:
                     popup=f"<b>Venta:</b> ${row['venta_neta']:.0f}<br><b>Canal:</b> {row['canal']}"
                 ).add_to(marker_cluster)
                 
-            st_folium(m, width=1000, height=600)
+            st_folium(m, width="100%", height=600)
                 
                 
                 
@@ -186,7 +218,7 @@ with tab1:
 
         elif tipo_mapa == "2.- Mapa de Calor: Densidad de Pedidos":
 
-            # 🔹 1. Crear mapa base (esto a veces falta en el .py)
+            
             m = folium.Map(
                 location=[-33.45694, -70.64827],
                 zoom_start=11,
@@ -195,7 +227,7 @@ with tab1:
                 tiles='cartodbpositron'
             )
 
-            # 🔹 2. HeatMap (igual que tu notebook)
+            
             data_cantidad = df_filtered[['lat', 'lng']].dropna().values.tolist()
 
             HeatMap(
@@ -206,7 +238,7 @@ with tab1:
                 gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}
             ).add_to(m)
 
-            # 🔹 3. GeoJson (comunas)
+
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
             folium.GeoJson(
@@ -228,7 +260,7 @@ with tab1:
                 )
             ).add_to(m)
 
-            # 🔹 4. Centros de distribución (CDs)
+             
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -239,8 +271,8 @@ with tab1:
                     icon=folium.Icon(color='black', icon='home', prefix='fa')
                 ).add_to(m)
 
-            # 🔹 5. Mostrar en Streamlit
-            st_folium(m, width=1000, height=600)
+            
+            st_folium(m, width="100%", height=600)
         
         
         
@@ -248,7 +280,7 @@ with tab1:
         
         elif tipo_mapa == "3.- Mapa de Calor: Intensidad Económica (Ventas)":
 
-            # 🔹 1. Crear mapa base (clave en Streamlit)
+            
             m = folium.Map(
                 location=[-33.45694, -70.64827],
                 zoom_start=11,
@@ -257,14 +289,14 @@ with tab1:
                 tiles='cartodbpositron'
             )
 
-            # 🔹 2. Normalización segura (evita división por 0)
+            
             max_val = df_filtered['venta_neta'].max()
             max_val = max_val if max_val > 0 else 1
 
-            df_filtered = df_filtered.copy()  # ⚠️ evita warning de pandas
+            df_filtered = df_filtered.copy()   
             df_filtered['venta_norm'] = df_filtered['venta_neta'] / max_val
 
-            # 🔥 3. Heatmap ponderado (igual que notebook)
+            
             data_venta = df_filtered[['lat', 'lng', 'venta_norm']].dropna().values.tolist()
 
             HeatMap(
@@ -274,7 +306,7 @@ with tab1:
                 min_opacity=0.5
             ).add_to(m)
 
-            # 🔴 4. Centros de distribución
+             
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -285,7 +317,7 @@ with tab1:
                     icon=folium.Icon(color='black', icon='home', prefix='fa')
                 ).add_to(m)
 
-            # 🟢 5. GeoJson (hover de comunas)
+           
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
             folium.GeoJson(
@@ -307,8 +339,8 @@ with tab1:
                 )
             ).add_to(m)
 
-            # 🔹 6. Mostrar en Streamlit
-            st_folium(m, width=1000, height=600)
+            
+            st_folium(m, width="100%", height=600)
     
     
     
@@ -317,7 +349,7 @@ with tab1:
 
         elif tipo_mapa == "4.- Mapa Coropleta: Venta Neta por Comuna":
 
-            # 🔹 1. Crear mapa base (clave en Streamlit)
+            
             m = folium.Map(
                 location=[-33.45694, -70.64827],
                 zoom_start=10,
@@ -326,14 +358,14 @@ with tab1:
                 tiles='cartodbpositron'
             )
 
-            # 🔹 2. Agrupación de ventas por comuna
+            
             ventas_comuna = df_filtered.groupby('comuna')['venta_neta'].sum().reset_index()
             ventas_comuna['comuna'] = ventas_comuna['comuna'].str.upper().str.strip()
 
-            # 🔹 3. Normalizar nombres en geo_data (MUY IMPORTANTE)
+            
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
-            # 🔹 4. Coropleta (igual a tu notebook)
+             
             choropleth = folium.Choropleth(
                 geo_data=geo_data,
                 name="choropleth",
@@ -345,10 +377,10 @@ with tab1:
                 line_opacity=0.2,
                 legend_name="Venta Neta Total por Comuna ($)",
                 highlight=True,
-                bins=3  # 🔥 mejora visual de la leyenda
+                bins=3  
             ).add_to(m)
 
-            # 🔴 5. Centros de distribución
+      
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -359,7 +391,7 @@ with tab1:
                     icon=folium.Icon(color='red', icon='home', prefix='fa')
                 ).add_to(m)
 
-            # 🔹 6. Tooltip con formato moneda (igual que notebook)
+             
             ventas_dict = ventas_comuna.set_index('comuna')['venta_neta'].to_dict()
 
             for feature in choropleth.geojson.data['features']:
@@ -375,8 +407,8 @@ with tab1:
                 )
             )
 
-            # 🔹 7. Mostrar en Streamlit
-            st_folium(m, width=1000, height=600)
+             
+            st_folium(m, width="100%", height=600)
             
             
             
@@ -385,7 +417,7 @@ with tab1:
 
         elif tipo_mapa == "5.- Análisis Combinado: Ventas + Densidad":
 
-            # 🔹 1. Crear mapa base (faltaba en tu bloque)
+            
             m = folium.Map(
                 location=[-33.45694, -70.64827],
                 zoom_start=11,
@@ -394,14 +426,14 @@ with tab1:
                 tiles='cartodbpositron'
             )
 
-            # 🔹 2. Preparación de datos
+           
             ventas_comuna = df_filtered.groupby('comuna')['venta_neta'].sum().reset_index()
             ventas_comuna['comuna'] = ventas_comuna['comuna'].str.upper().str.strip()
             ventas_comuna['venta_mm'] = ventas_comuna['venta_neta'] / 1_000_000
 
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
-            # 🔹 3. Coropleta (capa base)
+           
             choropleth = folium.Choropleth(
                 geo_data=geo_data,
                 data=ventas_comuna,
@@ -414,7 +446,7 @@ with tab1:
                 highlight=True
             ).add_to(m)
 
-            # 🔴 4. Centros de distribución
+            
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -422,10 +454,10 @@ with tab1:
                     location=[row['lat_cd'], row['lng_cd']],
                     popup=f"<b>CD:</b> {row['centro_dist']}<br><b>Comuna:</b> {row['comuna']}",
                     tooltip=row['centro_dist'],
-                    icon=folium.Icon(color='red', icon='home', prefix='fa')  # 🔴 igual que notebook
+                    icon=folium.Icon(color='red', icon='home', prefix='fa')   
                 ).add_to(m)
 
-            # 🔹 5. Tooltip enriquecido (igual que notebook)
+            
             ventas_dict = ventas_comuna.set_index('comuna')['venta_neta'].to_dict()
 
             for feature in choropleth.geojson.data['features']:
@@ -441,7 +473,7 @@ with tab1:
                 )
             )
 
-            # 🔥 6. Heatmap (capa superior)
+           
             data_puntos = df_filtered[['lat', 'lng']].dropna().values.tolist()
 
             HeatMap(
@@ -450,13 +482,13 @@ with tab1:
                 blur=18,
                 min_opacity=0.3,
                 gradient={0.4: 'blue', 0.6: 'purple', 1: 'red'},
-                name="Densidad de Pedidos (Calor)"  # 🔥 importante para LayerControl
+                name="Densidad de Pedidos (Calor)"  
             ).add_to(m)
 
-            # 🔹 7. Control de capas (clave en este mapa)
+            
             folium.LayerControl().add_to(m)
 
-            # 🔹 8. Mostrar en Streamlit
+          
             st_folium(m, width="100%", height=600, returned_objects=[])
 
 with tab2:
@@ -487,7 +519,7 @@ with tab2:
     else:
         st.info("Utilice los filtros laterales para visualizar el análisis estadístico.")
 
-# --- REFLEXIÓN ---
+ 
 st.divider()
 with st.expander(" Reflexión sobre la visualización"):
     st.markdown("""
