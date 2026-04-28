@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
 def format_chile(valor):
-    """Convierte un número a string con punto como separador de miles"""
+   
     return f"{valor:,.0f}".replace(',', '.')
 
 # Configuración de página
@@ -21,7 +21,7 @@ def load_data():
     nombre_archivo = "dataset_tarea_ind.xlsx"
     df = pd.read_excel(nombre_archivo, engine='openpyxl')
     
-    # Limpieza de l data set
+  
     cols_a_limpiar = ['venta_neta', 'lat', 'lng', 'kms_dist', 'lat_cd', 'lng_cd', 'unidades']
     for col in cols_a_limpiar:
         if col in df.columns:
@@ -117,15 +117,13 @@ if isinstance(fecha_rango, tuple) and len(fecha_rango) == 2:
 
 df_filtered = df[mask]
 
-
-
 #  CUERPO  
 st.title(" Dashboard de Visualización de Datos GeoEspaciales")
 st.markdown(f"**Alumno:** Diego Vásquez Orellana")
 
  
 if not df_filtered.empty:
-    # 1. Cálculos de porcentajes
+  
     total_p = len(df_filtered)
     pedidos_app = len(df_filtered[df_filtered['canal'].str.upper() == 'APP'])
     pedidos_sitio = len(df_filtered[df_filtered['canal'].str.upper() == 'SITIO'])
@@ -147,7 +145,7 @@ if not df_filtered.empty:
         
         st.markdown(f"""
             <div style="display: inline-block; padding: 5px 12px; margin-top: -10px; 
-                        background-color: #f0f2f6; border-radius: 8px; border: 1px solid #d1d5db;">
+                        background-color: #f0f2f6; border-radius: 8px; border: 1px solid #d1d5db;white-space: nowrap;">
                 <span style="color: #0000FF; font-size: 18px; font-weight: 900;">📱 App: {pct_app:.1f}%</span>
                 <span style="color: #333; font-size: 18px; font-weight: bold; margin: 0 8px;">|</span>
                 <span style="color: #006400; font-size: 18px; font-weight: 900;">💻 Sitio: {pct_sitio:.1f}%</span>
@@ -211,11 +209,7 @@ with tab1:
                 ).add_to(marker_cluster)
                 
             st_folium(m, width="100%", height=600)
-                
-                
-                
-                
-
+            
         elif tipo_mapa == "2.- Mapa de Calor: Densidad de Pedidos":
 
             
@@ -237,8 +231,7 @@ with tab1:
                 min_opacity=0.4,
                 gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}
             ).add_to(m)
-
-
+            
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
             folium.GeoJson(
@@ -259,8 +252,7 @@ with tab1:
                     aliases=['Comuna:']
                 )
             ).add_to(m)
-
-             
+        
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -270,14 +262,8 @@ with tab1:
                     tooltip=row['centro_dist'],
                     icon=folium.Icon(color='black', icon='home', prefix='fa')
                 ).add_to(m)
-
-            
             st_folium(m, width="100%", height=600)
-        
-        
-        
-        
-        
+    
         elif tipo_mapa == "3.- Mapa de Calor: Intensidad Económica (Ventas)":
 
             
@@ -288,8 +274,6 @@ with tab1:
                 max_zoom=16,
                 tiles='cartodbpositron'
             )
-
-            
             max_val = df_filtered['venta_neta'].max()
             max_val = max_val if max_val > 0 else 1
 
@@ -305,8 +289,6 @@ with tab1:
                 blur=10,
                 min_opacity=0.5
             ).add_to(m)
-
-             
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -316,8 +298,6 @@ with tab1:
                     tooltip=row['centro_dist'],
                     icon=folium.Icon(color='black', icon='home', prefix='fa')
                 ).add_to(m)
-
-           
             geo_data['name'] = geo_data['name'].str.upper().str.strip()
 
             folium.GeoJson(
@@ -338,15 +318,8 @@ with tab1:
                     aliases=['Comuna:']
                 )
             ).add_to(m)
-
-            
             st_folium(m, width="100%", height=600)
     
-    
-    
-    
-    
-
         elif tipo_mapa == "4.- Mapa Coropleta: Venta Neta por Comuna":
 
             
@@ -357,7 +330,6 @@ with tab1:
                 max_zoom=16,
                 tiles='cartodbpositron'
             )
-
             
             ventas_comuna = df_filtered.groupby('comuna')['venta_neta'].sum().reset_index()
             ventas_comuna['comuna'] = ventas_comuna['comuna'].str.upper().str.strip()
@@ -379,8 +351,6 @@ with tab1:
                 highlight=True,
                 bins=3  
             ).add_to(m)
-
-      
             cds_unicos = df_filtered.drop_duplicates(subset=['centro_dist'])
 
             for _, row in cds_unicos.iterrows():
@@ -390,8 +360,6 @@ with tab1:
                     tooltip=row['centro_dist'],
                     icon=folium.Icon(color='red', icon='home', prefix='fa')
                 ).add_to(m)
-
-             
             ventas_dict = ventas_comuna.set_index('comuna')['venta_neta'].to_dict()
 
             for feature in choropleth.geojson.data['features']:
@@ -409,11 +377,6 @@ with tab1:
 
              
             st_folium(m, width="100%", height=600)
-            
-            
-            
-            
-            
 
         elif tipo_mapa == "5.- Análisis Combinado: Ventas + Densidad":
 
@@ -424,9 +387,7 @@ with tab1:
                 min_zoom=10,
                 max_zoom=16,
                 tiles='cartodbpositron'
-            )
-
-           
+            )           
             ventas_comuna = df_filtered.groupby('comuna')['venta_neta'].sum().reset_index()
             ventas_comuna['comuna'] = ventas_comuna['comuna'].str.upper().str.strip()
             ventas_comuna['venta_mm'] = ventas_comuna['venta_neta'] / 1_000_000
@@ -473,7 +434,6 @@ with tab1:
                 )
             )
 
-           
             data_puntos = df_filtered[['lat', 'lng']].dropna().values.tolist()
 
             HeatMap(
@@ -519,7 +479,6 @@ with tab2:
     else:
         st.info("Utilice los filtros laterales para visualizar el análisis estadístico.")
 
- 
 st.divider()
 with st.expander(" Reflexión sobre la visualización"):
     st.markdown("""
