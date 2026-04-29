@@ -480,10 +480,34 @@ with tab2:
         st.info("Utilice los filtros laterales para visualizar el análisis estadístico.")
 
 st.divider()
-with st.expander(" Reflexión sobre la visualización"):
-    st.markdown("""
-    **Análisis de Impacto de Filtros Avanzados:**
-    1. **Filtro Temporal:** Permite identificar picos de demanda entre enero y abril de 2025, optimizando la planificación de inventario.
-    2. **Filtros Geo-Logísticos:** Al combinar el filtro de Comuna y CD, la empresa puede detectar si un Centro de Distribución específico está subutilizado o si la demanda de una comuna está siendo atendida por un CD ineficiente (lejano).
-    3. **Rendimiento:** El uso de `st.cache_data` y el muestreo de 1000 puntos asegura que el dashboard sea rápido incluso con miles de registros.
-    """)
+
+st.markdown("### Análisis e Insights de la Visualización de Datos")
+
+st.markdown("""
+<div style="text-align: justify;">
+
+El análisis geoespacial mediante Folium permitió incorporar el contexto territorial en la interpretación de los datos, facilitando la identificación de patrones de concentración de la demanda y su relación con los centros de distribución. Este enfoque complementa el análisis tradicional, entregando una visión más integral para la toma de decisiones.
+
+Asimismo, la construcción del mapa de coropletas evidenció desafíos tanto técnicos como interpretativos, principalmente asociados a la normalización de datos geográficos y a posibles sesgos visuales derivados del tamaño de las comunas.
+
+En términos de implementación, la integración con Streamlit destacó la importancia de optimizar el rendimiento mediante el uso de caching, control de latencia y técnicas de muestreo, asegurando una experiencia de usuario fluida.
+
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+**Insights Clave**
+
+- **Visión territorial de la demanda:**  
+  Identificación de clústeres y patrones espaciales que no son visibles en gráficos tradicionales.
+
+- **Desafíos en visualización geográfica:**  
+  Requiere precisión en datos y una interpretación cuidadosa para evitar sesgos.
+
+- **Rendimiento del dashboard:**  
+  Uso eficiente de `st.cache_data` y muestreo para garantizar fluidez.
+
+- **Oportunidades estratégicas:**  
+  Optimización de última milla, fortalecimiento del canal digital y mejor distribución de carga entre centros.
+
+""")
